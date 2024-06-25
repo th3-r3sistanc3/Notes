@@ -18,5 +18,27 @@
 
 ![image](https://github.com/th3-r3sistanc3/Notes/assets/71440632/077ee120-bd6a-4eba-a40c-47a1deb4c951)
 
+## Defenses
 
-  
+1. Blacklisting
+  Blacklist the malicious/sensitive URLs
+2. Whitelisting
+  Allow only certain trusted URLs
+
+## Bypassing defenses.
+
+- Use an alternative IP representation of 127.0.0.1 such as 2130706433, 017700000001 or 127.1
+- Obfuscate blocked strings using URL encoding or case variation. —> URL encoding or double URL encoding
+- Try using different redirect codes, as well as different protocols for the target URL. For example, switching from an http: to https:
+- Check if application is only checking if certain URL string is present in  request.https://expected-host:fakepassword@evil-host, https://evil-host#expected-host,  https://expected-host.evil-host
+- Check open redirection vulnerability in the site whose URLs are whitelisted
+
+## Blind SSRF vulnerabilities
+  Blind SSRF vulnerabilities occur if you can cause an application to issue a back-end HTTP request to a supplied URL, but the response from the back-end request is not returned in the application's front-end response.
+  Sometimes leads to full remote code execution on the server or other back-end components.
+
+  - You can blindly sweep the internal IP address space, sending payloads designed to detect well-known vulnerabilities. If those payloads also employ blind out-of-band techniques, then you might uncover a critical vulnerability on an unpatched internal server.
+
+  `It is common when testing for SSRF vulnerabilities to observe a DNS look-up for the supplied Collaborator domain, but no subsequent HTTP request. This typically happens because the application attempted to make an HTTP request to the domain, which caused the initial DNS lookup, but the actual HTTP request was blocked by network-level filtering. It is relatively common for infrastructure to allow outbound DNS traffic, since this is needed for so many purposes, but block HTTP connections to unexpected destinations.`
+
+- Check SSRF in 'Referer Header'
