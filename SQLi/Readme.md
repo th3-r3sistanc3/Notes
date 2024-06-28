@@ -11,6 +11,9 @@
 
 Types
 
+![image](https://github.com/th3-r3sistanc3/Notes/assets/71440632/4b7cde45-8ee0-4712-b052-607c092252dc)
+
+
 1. Conditional responses (TRUE / FALSE):
     - You can retrieve information by triggering different responses conditionally, depending on an injected condition.
         ![image](https://github.com/th3-r3sistanc3/Notes/assets/71440632/6ca4ec03-3f3a-4f9c-a79a-fc92b4e46167)
